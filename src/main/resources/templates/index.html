@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .file-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .file-preview img,
+        .file-preview video {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: cover;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        .upload-btn {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>File Upload</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="file" accept="image/*,video/*" required>
+        <button type="submit" class="upload-btn">Upload File</button>
+    </form>
+
+    <div class="file-preview" id="filePreview">
+        <!-- Files (images and videos) will be displayed here -->
+    </div>
+</div>
+
+<script>
+    // Handle the file upload
+    document.getElementById('uploadForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the form from submitting normally
+
+        const formData = new FormData();
+        const fileInput = document.getElementById('file');
+        formData.append('file', fileInput.files[0]);
+
+        // Upload the file using Fetch API
+        fetch('http://localhost:8080/uploads', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('File uploaded successfully', data);
+                loadFilePreview(); // Reload the file preview after uploading
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+            });
+    });
+
+    // Load the list of uploaded files (both images and videos)
+    function loadFilePreview() {
+        fetch('http://localhost:8080/uploads')
+            .then(response => response.json())
+            .then(files => {
+                const filePreview = document.getElementById('filePreview');
+                filePreview.innerHTML = ''; // Clear the existing files
+
+                // Add the uploaded files to the preview
+                files.forEach(fileUrl => {
+                    const fileExtension = fileUrl.split('.').pop().toLowerCase();
+                    const fileElement = document.createElement(fileExtension === 'mp4' ? 'video' : 'img');
+
+                    fileElement.src = fileUrl;
+                    if (fileExtension === 'mp4') {
+                        fileElement.controls = true; // Enable video controls for video files
+                    }
+
+                    filePreview.appendChild(fileElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching files:', error);
+            });
+    }
+
+    // Load existing files when the page loads
+    window.onload = loadFilePreview;
+</script>
+
+</body>
+</html>
